@@ -10,7 +10,7 @@ var config = {
 	},
 	
 	camera: {
-		position : new THREE.Vector3(0, 0, 500),
+		position : new THREE.Vector3(0, 0, 800),
 		target : new THREE.Vector3(0, 0, 0)
 	},
 

@@ -76,51 +76,39 @@ module.exports = {
 
 	createParticles: function() {
 		this.uniforms = {
-			map: { type: 't', value: THREE.ImageUtils.loadTexture(config.particles.texture) },
-			explosionsPos: { type: 'v2v', value: this.explosionsPos },
-			explosionsTime: { type: 'fv1', value: this.explosionsTime },
-			explosionsIndex: { type: 'i', value: this.explosionsIndex },
+			time: { type: 'f', value: 0.0 },
 		}
-		this.geometry = new THREE.BufferGeometry();
-		this.vertices = new Float32Array( config.particles.count * 3 );
-		this.sizes = new Float32Array( config.particles.count );
 
-		let maxWidth  = config.drawField.maxWidth;
-		let maxHeight = config.drawField.maxHeight;
-		let maxDepth = config.drawField.maxDepth;
-
-		let stepX = maxWidth / config.particles.count;
-		let stepY = maxHeight / config.particles.count;
-		let stepZ = maxDepth / config.particles.count;
+		this.geometry 	= new THREE.BufferGeometry();
+		this.vertices 	= new Float32Array( config.particles.count * 3 );
+		this.sizes 		= new Float32Array( config.particles.count );
+		this.variables 	= new Float32Array( config.particles.count );
 
 		for( let i = 0 ; i < config.particles.count ; i++ ) {
 
-			let j = i - i * config.drawField.mitigator;
+			// let angle1 = Math.random() * Math.PI * 2;
+			// let angle2 = Math.acos( Math.random() * 2 - 1 );
+			// let dist   = 400;
 
-			// let width  = maxWidth - stepX * j;
-			// let height = maxWidth - stepY * j;
-			let depth  = maxDepth - stepY * j;
+			// let pX = dist * Math.sin( angle1 ) * Math.cos( angle2 );
+			// let pY = dist * Math.sin( angle1 ) * Math.sin( angle2 );
+			// let pZ = dist * Math.cos( angle1 );
 
-			// let pX = Math.random() * ( width ) - width * .5;
-			// let pY = Math.random() * ( height ) - height * .5;
-			// let pZ = Math.random() * ( depth ) - depth * .5;
+			// this.vertices[i * 3] = pX;
+			// this.vertices[i * 3 + 1] = pY;
+			// this.vertices[i * 3 + 2] = pZ;
 
-			let angle = Math.random() * Math.PI * 2;
-			let dist = Math.random()*Math.random()*maxWidth/2;
+			this.vertices[i * 3] = 0;
+			this.vertices[i * 3 + 1] = 0;
+			this.vertices[i * 3 + 2] = 0;
 
-			let pX = dist * Math.cos( angle );
-			let pY = dist * Math.sin( angle );
-			let pZ = Math.random() * ( depth ) - depth * .5;
+			this.sizes[ i ] = 1;
 
-			this.vertices[i * 3] = pX;
-			this.vertices[i * 3 + 1] = pY;
-			this.vertices[i * 3 + 2] = pZ;
-
-			this.sizes[ i ] = Math.random() * 5;
+			this.variables[ i ] = Math.random();
 		}
 
+		this.geometry.addAttribute( 'variable', new THREE.BufferAttribute( this.variables, 1 ) );
 		this.geometry.addAttribute( 'position', new THREE.BufferAttribute( this.vertices, 3 ) );
-
 		this.geometry.addAttribute( 'size', new THREE.BufferAttribute( this.sizes, 1 ) );
 
 		this.material = new THREE.ShaderMaterial( {
@@ -139,14 +127,6 @@ module.exports = {
 	},
 
 	onClick: function( event ) {
-
-		let position = this.plane.getIntersection(event, this.camera);
-
-		this.explosionsPos[ this.explosionsIndex ] = new THREE.Vector2( position.x, position.y );
-		this.explosionsTime[ this.explosionsIndex ] = 0;
-
-		this.explosionsIndex++;
-		this.uniforms.explosionsIndex.value = this.explosionsIndex;
 	},
 
 	onMove: function( event ) {
@@ -156,6 +136,10 @@ module.exports = {
 
 	onResize: function() {
 		this.renderer.setSize(window.innerWidth, window.innerHeight);
+		this.ratio = window.innerWidth / window.innerHeight;
+
+		this.camera.aspect = this.ratio;
+		this.camera.updateProjectionMatrix();
 
 		this.halfWidth = window.innerWidth * .5;
 		this.halfHeight = window.innerHeight * .5;
@@ -163,13 +147,6 @@ module.exports = {
 
 	render: function() {
 		let delta = this.clock.getDelta();
-
-		for( let i = 0 ; i < this.explosionsIndex ; i++ ) {
-			this.explosionsTime[i] += delta;
-		}
-
-		this.uniforms.explosionsTime.value = this.explosionsTime;
-		this.uniforms.explosionsPos.value = this.explosionsPos;
 
 		this.currentCameraPos.x += ( ( this.cameraPos.x * .7) - this.currentCameraPos.x ) * 0.01;
 		this.currentCameraPos.y += ( ( this.cameraPos.y * .8) - this.currentCameraPos.y ) * 0.01;
