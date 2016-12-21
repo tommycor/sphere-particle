@@ -1,60 +1,29 @@
-#define MAX_EXP 200
-#define MAX_DIST 200.
-#define MAX_Time 10.
 
-#define EXP_TIME_POWER 30.
-#define EXP_TIME_VELOCITY 3.
 
-#define EXP_DIST_POWER 10.
-#define EXP_DIST_VELOCITY .03 //smallest number = bigger explosion
+#define M_PI 3.1415926535897932384626433832795
+#define DIST 300.0
 
-uniform float explosionsTime[ MAX_EXP ];
-uniform vec2 explosionsPos[ MAX_EXP ];
-uniform int explosionsIndex;
-
-varying float dist;
+uniform float time;
 
 attribute float size;
 
 void main() {
-	float timeFactor = .0;
-	float distFactor = .0;
+	vec2 fakePosition   = vec2( position.x, position.y );
+	vec3 newPosition	= vec3( .0, .0, .0 );
 
-	vec3 director 	 = vec3(0, 0, 0);
-	vec3 newPosition = position;
+	fakePosition.x = snoise( vec2( position.x, time * .001 ) );
+	fakePosition.y = snoise( vec2( position.y, time * .001 ) );
 
-	for( int i = 0 ; i < MAX_EXP ; i++ ) {
+	float angle1 = 2. * M_PI * fakePosition.x;
+	float angle2 = acos( fakePosition.y * 2. - 1. );
 
-		if( i >= explosionsIndex ) {
-			break;
-		}
-
-		dist = distance( vec3( explosionsPos[i], .0 ), newPosition );
-
-		if( dist <= MAX_DIST ) {
-			
-			director 	= normalize( newPosition - vec3( explosionsPos[i], .0 ) );
-
-			// http://www.md.ucl.ac.be/didac/physique/didacphys/rappels/math/fonctions/expon.html#expon
-			// y = a . (1 - exp(-b . x))
-			timeFactor	= EXP_TIME_POWER * ( 1. - exp( -EXP_TIME_VELOCITY * explosionsTime[i]) );
-
-			// http://www.md.ucl.ac.be/didac/physique/didacphys/rappels/math/fonctions/expon.html#expon
-			//  y = a . exp(-b . x)
-			distFactor	= EXP_DIST_POWER * exp( -EXP_DIST_VELOCITY * dist );
-
-			if( distFactor < .0 ) {
-				distFactor = .0;
-			}
-
-			newPosition = newPosition + director * timeFactor * distFactor;
-		}
-	}
+	newPosition.x = DIST * sin( angle1 ) * cos( angle2 );
+	newPosition.y = DIST * sin( angle1 ) * sin( angle2 );
+	newPosition.z = DIST * cos( angle1 );
 
 	vec4 mvPosition = modelViewMatrix * vec4( newPosition, 1. );
 
-	gl_PointSize = size * ( 300. / - mvPosition.z );
-
+	gl_PointSize = size * ( 500. / - mvPosition.z );
 
     gl_Position = projectionMatrix * mvPosition;
 }

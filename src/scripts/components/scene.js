@@ -5,9 +5,6 @@ import config 				from '../utils/config';
 import raf 					from '../utils/raf';
 import mapper 				from '../utils/mapper';
 
-import plane 				from './planeMouseDetector.js';
-
-
 module.exports = {
 
 	init: function() {
@@ -37,7 +34,7 @@ module.exports = {
 		this.scene 	   = new THREE.Scene();
 		this.container = config.canvas.element;
 
-		this.camera 		   = new THREE.PerspectiveCamera(45, this.ratio, 15, 2000);
+		this.camera 		   = new THREE.PerspectiveCamera(45, this.ratio, 15, 3000);
 		this.camera.position.x = config.camera.position.x;
 		this.camera.position.y = config.camera.position.y;
 		this.camera.position.z = config.camera.position.z;
@@ -77,12 +74,13 @@ module.exports = {
 	createParticles: function() {
 		this.uniforms = {
 			time: { type: 'f', value: 0.0 },
+			map: { type: 't', value: THREE.ImageUtils.loadTexture(config.particles.texture) },
+
 		}
 
 		this.geometry 	= new THREE.BufferGeometry();
 		this.vertices 	= new Float32Array( config.particles.count * 3 );
 		this.sizes 		= new Float32Array( config.particles.count );
-		this.variables 	= new Float32Array( config.particles.count );
 
 		for( let i = 0 ; i < config.particles.count ; i++ ) {
 
@@ -98,32 +96,26 @@ module.exports = {
 			// this.vertices[i * 3 + 1] = pY;
 			// this.vertices[i * 3 + 2] = pZ;
 
-			this.vertices[i * 3] = 0;
-			this.vertices[i * 3 + 1] = 0;
+			this.vertices[i * 3] = Math.random();
+			this.vertices[i * 3 + 1] = Math.random();
 			this.vertices[i * 3 + 2] = 0;
 
 			this.sizes[ i ] = 1;
-
-			this.variables[ i ] = Math.random();
 		}
 
-		this.geometry.addAttribute( 'variable', new THREE.BufferAttribute( this.variables, 1 ) );
 		this.geometry.addAttribute( 'position', new THREE.BufferAttribute( this.vertices, 3 ) );
 		this.geometry.addAttribute( 'size', new THREE.BufferAttribute( this.sizes, 1 ) );
 
 		this.material = new THREE.ShaderMaterial( {
 			uniforms: this.uniforms,
 			transparent: true,
-			vertexShader: require('../shaders/particles.vertex.glsl'),
+			vertexShader: require('../shaders/noises/noise2D.glsl') + require('../shaders/particles.vertex.glsl'),
 			fragmentShader: require('../shaders/particles.fragment.glsl')
 		});
 
 		this.particleSystem = new THREE.Points( this.geometry, this.material );
 
 		this.scene.add(this.particleSystem);
-
-		this.plane = new plane();
-		this.scene.add( this.plane.mesh );
 	},
 
 	onClick: function( event ) {
@@ -153,6 +145,8 @@ module.exports = {
 
 		this.camera.position.set( this.currentCameraPos.x, this.currentCameraPos.y, this.currentCameraPos.z );
 		this.camera.lookAt(config.camera.target);
+
+		this.uniforms.time.value += delta;
 
 		this.renderer.render(this.scene, this.camera);
 	}
