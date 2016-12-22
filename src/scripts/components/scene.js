@@ -20,15 +20,11 @@ module.exports = {
 		this.plane   		= null;
 		this.explosionsPos 	= [];
 		this.explosionsTime = [];
+		this.nbrParticles 	= 250000;
 
 		// KEEP THIS SHIT
 		// ADD VALUES IN A PREDEFINED LENGTH ARRAY
 		// POP THE LASTS AND UNSHIFT THE NEW ONES
-		for( let i = 0 ; i < config.particles.maxExplosions - 1 ; i++ ) {
-			this.explosionsPos[i]  = new THREE.Vector2( 0, 0, 0 );
-			this.explosionsTime[i] = 100;
-			this.explosionsIndex   = 0;
-		}
 
 		//// INIT
 		this.scene 	   = new THREE.Scene();
@@ -65,8 +61,9 @@ module.exports = {
 		raf.register( this.render );
 		raf.start();
 		this.onResize();
+		this.addControls();
 
-		window.addEventListener( 'click', this.onClick );
+		// window.addEventListener( 'click', this.onClick );
 		window.addEventListener( 'resize', this.onResize );
 		window.addEventListener( 'mousemove', this.onMove );
 	},
@@ -79,26 +76,12 @@ module.exports = {
 		}
 
 		this.geometry 	= new THREE.BufferGeometry();
-		this.vertices 	= new Float32Array( config.particles.count * 3 );
-		this.sizes 		= new Float32Array( config.particles.count );
+		this.vertices 	= new Float32Array( this.nbrParticles * 3 );
+		this.sizes 		= new Float32Array( this.nbrParticles );
 
-		for( let i = 0 ; i < config.particles.count ; i++ ) {
-
-			// let angle1 = Math.random() * Math.PI * 2;
-			// let angle2 = Math.acos( Math.random() * 2 - 1 );
-			// let dist   = 400;
-
-			// let pX = dist * Math.sin( angle1 ) * Math.cos( angle2 );
-			// let pY = dist * Math.sin( angle1 ) * Math.sin( angle2 );
-			// let pZ = dist * Math.cos( angle1 );
-
-			// this.vertices[i * 3] = pX;
-			// this.vertices[i * 3 + 1] = pY;
-			// this.vertices[i * 3 + 2] = pZ;
-
-			this.vertices[i * 3] = Math.random();
-			this.vertices[i * 3 + 1] = Math.random();
-			this.vertices[i * 3 + 2] = 0;
+		for( let i = 0 ; i < this.nbrParticles ; i++ ) {
+			this.vertices = this.randomizePoints(this.vertices, i);
+			this.vertices = this.normalizePoints(this.vertices, i);
 
 			this.sizes[ i ] = 1;
 		}
@@ -116,6 +99,50 @@ module.exports = {
 		this.particleSystem = new THREE.Points( this.geometry, this.material );
 
 		this.scene.add(this.particleSystem);
+	},
+
+	addControls: function() {
+		this.buttons = document.querySelectorAll('.btn');
+
+		if( this.buttons.length === 0 ) { return; }
+
+		for( let i = 0 ; i < this.buttons.length ; i++ ) {
+			let btn = this.buttons[i];
+			
+			btn.addEventListener('click', ()=>{
+
+				for( let j = 0 ; j < this.buttons.length ; j++ ) {
+					this.buttons[j].classList.remove('is-active');
+				}
+
+				btn.classList.add('is-active');
+				this.nbrParticles = parseInt( btn.getAttribute('data-value') ) * 1000;
+				this.scene.remove(this.particleSystem);
+				this.createParticles();
+			});
+		}
+	},
+
+	randomizePoints: function( vertices, i ) {
+		vertices[i * 3] 	= Math.random() * 2 - 1;
+		vertices[i * 3 + 1] = Math.random() * 2 - 1;
+		vertices[i * 3 + 2] = Math.random() * 2 - 1;
+
+		if( vertices[i * 3] * vertices[i * 3] + vertices[i * 3 + 1] * vertices[i * 3 + 1] + vertices[i * 3 + 2] * vertices[i * 3 + 2] > 1 ) {
+			vertices = this.randomizePoints( vertices, i );
+		}
+
+		 return vertices;
+	},
+
+	normalizePoints: function( vertices, i ) {
+		let length = Math.sqrt( vertices[i * 3] * vertices[i * 3] + vertices[i * 3 + 1] * vertices[i * 3 + 1] + vertices[i * 3 + 2] * vertices[i * 3 + 2] );
+
+		vertices[i * 3]		/= length;
+		vertices[i * 3 + 1] /= length;
+		vertices[i * 3 + 2] /= length;
+
+		 return vertices;
 	},
 
 	onClick: function( event ) {

@@ -646,6 +646,16 @@ strong {
   width: 0;
   vertical-align: middle;
 }
+.btn {
+  font-size: 15px;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  margin-top: 5px;
+  margin-left: 5px;
+}
+.btn.is-active {
+  color: #808080;
+}
 .u-w1of12 {
   width: 8.333333333333334%;
 }
